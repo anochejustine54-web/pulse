@@ -1,3 +1,5 @@
+// AuthScreen.jsx - the ONLY thing shown until sign-in succeeds
+import Form from "./form";
 
 export default function AuthScreen({ onSuccess }) {
   return (
