@@ -19,7 +19,7 @@
 .auth-box > .muted { margin: 0 0 14px; font-size: 0.95rem; }
 .auth-box .card { border: 0; padding: 0; background: none; }
 
-/* ---------- header and burger menu (burger shows on every screen size) ---------- */
+/* ---------- header and burger menu (small screens) ---------- */
 .header { position: sticky; top: 0; z-index: 50; background: var(--card); border-bottom: 1px solid var(--border); }
 .header-inner { max-width: 920px; margin: 0 auto; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; position: relative; }
 .logo { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 1.35rem; text-decoration: none; color: var(--primary-dark); }
@@ -38,6 +38,28 @@
 .user-chip { display: flex; align-items: center; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid var(--border); font-weight: 600; }
 .logout { width: 100%; margin-top: 4px; color: var(--error); border-color: #dc262655; font-weight: 700; }
 .logout:hover { background: #dc26260f; }
+
+/* On wide screens: hide the burger and show the links in a row */
+@media (min-width: 760px) {
+  .burger { display: none; }
+  .nav {
+    position: static;
+    width: auto;
+    max-height: none;
+    overflow: visible;
+    padding: 0;
+    background: none;
+    box-shadow: none;
+    border-radius: 0;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .nav.open { padding: 0; max-height: none; }
+  .nav-links { order: 1; flex-direction: row; margin: 0; }
+  .user-chip { order: 2; padding-bottom: 0; border-bottom: 0; }
+  .logout { order: 3; width: auto; margin-top: 0; }
+}
 
 /* ---------- buttons and inputs ---------- */
 button.primary, .btn-link { background: var(--primary); color: #fff; border: 0; border-radius: 10px; padding: 10px 18px; font-weight: 700; cursor: pointer; text-decoration: none; display: inline-block; width: fit-content; transition: background 0.2s; }
