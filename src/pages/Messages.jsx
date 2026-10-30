@@ -1,3 +1,5 @@
+// Messages.jsx - real conversations between the three Pulse accounts,
+// saved in the browser (localStorage) and synced across tabs.
 import { useEffect, useRef, useState } from "react";
 import { useOutletContext } from "react-router";
 import Body from "../components/Body";
@@ -104,13 +106,13 @@ export default function Messages() {
               key={c.id}
               chat={c}
               active={c.name === activeName}
-              onSelect={() => { setActiveName(c.name); setMobileChat(true); }}
+              onSelect={() => { setActiveName(c.name); setMobileChat (true); }}
             />
           ))}
         </ul>
 
         {/* Conversation */}
-        <div className={`card bg-base-100 h-[32rem] overflow-hidden shadow-sm ${mobileChat ? "flex" : "hidden"} md:flex`}>
+        <div className={`card bg-base-100 h-128 overflow-hidden shadow-sm ${mobileChat ? "flex" : "hidden"} md:flex`}>
           <div className="flex items-center gap-3 border-b border-base-300 p-3">
             <button className="btn btn-ghost btn-sm md:hidden" onClick={() => setMobileChat(false)} aria-label="Back to contacts">←</button>
             <Avatar name={activeName} online />

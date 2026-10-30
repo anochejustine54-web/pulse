@@ -1,3 +1,4 @@
+// items.jsx - small reusable pieces built with daisyUI classes
 import { useAvatars } from "./avatars";
 
 const sizes = { "": "w-11", small: "w-8 text-xs", large: "w-28 text-4xl" };
@@ -87,7 +88,7 @@ const icons = { success: "✔", error: "⚠", warning: "ℹ" };
 // Toast alert at the top of the screen
 export const Toast = ({ alert, onClose }) =>
   alert.show ? (
-    <div className="toast toast-top toast-center z-[100]">
+    <div className="toast toast-top toast-center z-100">
       <div role="alert" className={`alert ${alertClass[alert.type]} shadow-lg`}>
         <span aria-hidden="true">{icons[alert.type]}</span>
         <span>{alert.message}</span>
