@@ -1,28 +1,11 @@
 @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
-
-:root {
-  --primary: #0e7c86;
-  --primary-dark: #0a5c64;
-  --primary-soft: #dff3f4;
-  --accent: #ff5a5f;
-  --bg: #f4f7fa;
-  --card: #ffffff;
-  --text: #1b2430;
-  --muted: #667085;
-  --border: #e2e8ef;
-  --success: #15803d;
-  --error: #dc2626;
-  --warning: #b45309;
-  --radius: 14px;
+@import "tailwindcss";
+@plugin "daisyui" {
+  themes: light --default, dark --prefersdark, cupcake, emerald;
 }
 
-* { box-sizing: border-box; }
-
 body {
-  margin: 0;
   font-family: "Plus Jakarta Sans", system-ui, sans-serif;
-  color: var(--text);
-  line-height: 1.5;
   background-color: #123c42;
   /* local file first, Pinterest link as backup */
   background-image:
@@ -34,19 +17,11 @@ body {
   background-attachment: fixed;
 }
 
-/* light layer on top of the picture so text stays readable */
+/* light layer over the picture so text stays readable (follows the theme) */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -1;
-  background: rgba(244, 247, 250, 0.55);
-}
-
-a { color: inherit; }
-button, input, textarea { font: inherit; }
-:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
-
-@media (prefers-reduced-motion: reduce) {
-  * { animation: none !important; transition: none !important; }
+  background: color-mix(in oklab, var(--color-base-200) 60%, transparent);
 }

@@ -1,13 +1,15 @@
-// Footer.jsx
 import { Link } from "react-router";
 
 export default function Footer() {
   return (
-    <footer className="footer">
-      <p>© 2026 Pulse. Share what moves you.</p>
-      <p>
-        <Link to="/about">About</Link> · <Link to="/messages">Messages</Link>
-      </p>
+    <footer className="footer footer-center bg-base-100 text-base-content p-4">
+      <aside>
+        <p>© 2026 Pulse. Share what moves you.</p>
+        <p className="text-sm opacity-70">
+          <Link to="/about" className="link link-hover">About</Link> ·{" "}
+          <Link to="/messages" className="link link-hover">Messages</Link>
+        </p>
+      </aside>
     </footer>
   );
 }

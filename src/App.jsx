@@ -1,5 +1,3 @@
-// App.jsx - if nobody is signed in, show ONLY the sign up form.
-// After a successful sign-in, the real app (Layout + pages) appears.
 import { Routes, Route } from "react-router";
 import { useState } from "react";
 import Layout from "./components/Layout";

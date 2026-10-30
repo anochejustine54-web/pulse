@@ -1,4 +1,3 @@
-// avatars.jsx - stores each account's profile picture and shares it with every component
 import { createContext, useContext, useEffect, useState } from "react";
 
 const STORAGE_KEY = "pulse-avatars";

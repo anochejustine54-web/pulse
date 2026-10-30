@@ -1,4 +1,3 @@
-// Home.jsx - the feed. Posts are stored in an array in state.
 import { useState } from "react";
 import { useOutletContext } from "react-router";
 import Body from "../components/Body";
@@ -14,13 +13,13 @@ const samplePosts = [
 ];
 
 export default function Home() {
-  const { user } = useOutletContext(); // signed-in username from Layout
+  const { user } = useOutletContext();
   const [posts, setPosts] = useState(samplePosts);
   const [draft, setDraft] = useState("");
-  const [photo, setPhoto] = useState(""); // preview URL of the chosen picture
+  const [photo, setPhoto] = useState("");
   const [uploadError, setUploadError] = useState("");
 
-  // Toggle liked (true/false) and adjust the count. map() returns a NEW array.
+  // map() returns a NEW array with the liked post updated
   const handleLike = (id) =>
     setPosts((prev) =>
       prev.map((p) =>
@@ -28,7 +27,6 @@ export default function Home() {
       )
     );
 
-  // Runs when the user picks a file
   const handleFile = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -38,12 +36,10 @@ export default function Home() {
       setUploadError("That picture is over 5 MB. Please choose a smaller one.");
     } else {
       setUploadError("");
-      setPhoto(URL.createObjectURL(file)); // temporary link to the chosen file
+      setPhoto(URL.createObjectURL(file));
     }
-    e.target.value = ""; // lets you pick the same file again later
+    e.target.value = "";
   };
-
-  const removePhoto = () => setPhoto("");
 
   // Only the owner can delete. filter() returns a NEW array without the post.
   const handleDelete = (id) => {
@@ -53,67 +49,51 @@ export default function Home() {
     setPosts((prev) => prev.filter((p) => p.id !== id));
   };
 
-  // Add the new post to the TOP with a new array (never push)
   const handlePost = (e) => {
     e.preventDefault();
     if (!draft.trim() && !photo) return;
-    const newPost = {
-      id: Date.now(),
-      author: user,
-      time: "Just now",
-      text: draft.trim(),
-      image: "",
-      photo,
-      likes: 0,
-      liked: false,
-      comments: 0,
-    };
-    setPosts((prev) => [newPost, ...prev]);
+    const newPost = { id: Date.now(), author: user, time: "Just now", text: draft.trim(), image: "", photo, likes: 0, liked: false, comments: 0 };
+    setPosts((prev) => [newPost, ...prev]); // new post on top
     setDraft("");
     setPhoto("");
   };
 
   return (
     <Body title="Your feed" subtitle="See what everyone is sharing.">
-      <form className="card composer" onSubmit={handlePost}>
-        <div className="composer-row">
-          <Avatar name={user} />
-          <input
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            placeholder="What's on your mind?"
-            aria-label="Write a post"
-          />
-        </div>
-
-        {photo && (
-          <div className="preview">
-            <img src={photo} alt="Selected" />
-            <button type="button" className="ghost" onClick={removePhoto}>Remove</button>
+      <form className="card bg-base-100 shadow-sm" onSubmit={handlePost}>
+        <div className="card-body gap-3">
+          <div className="flex items-center gap-3">
+            <Avatar name={user} />
+            <input
+              className="input w-full"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder="What's on your mind?"
+              aria-label="Write a post"
+            />
           </div>
-        )}
-        {uploadError && <p className="upload-error" role="alert">{uploadError}</p>}
 
-        <div className="composer-row end">
-          <label htmlFor="photo" className="ghost upload-btn">📷 Add photo</label>
-          <input id="photo" type="file" accept="image/*" hidden onChange={handleFile} />
-          <button type="submit" className="primary" disabled={!draft.trim() && !photo}>Post</button>
+          {photo && (
+            <div className="relative">
+              <img className="rounded-box max-h-64 w-full object-cover" src={photo} alt="Selected" />
+              <button type="button" className="btn btn-sm absolute top-2 right-2" onClick={() => setPhoto("")}>Remove</button>
+            </div>
+          )}
+          {uploadError && <div role="alert" className="alert alert-error alert-soft py-2 text-sm">{uploadError}</div>}
+
+          <div className="flex items-center justify-between">
+            <label htmlFor="photo" className="btn btn-ghost btn-sm">📷 Add photo</label>
+            <input id="photo" type="file" accept="image/*" hidden onChange={handleFile} />
+            <button type="submit" className="btn btn-primary btn-sm" disabled={!draft.trim() && !photo}>Post</button>
+          </div>
         </div>
       </form>
 
       {posts.map((post) => (
-        <PostCard
-          key={post.id}
-          post={post}
-          onLike={handleLike}
-          onDelete={handleDelete}
-          canDelete={post.author === user}
-        />
+        <PostCard key={post.id} post={post} onLike={handleLike} onDelete={handleDelete} canDelete={post.author === user} />
       ))}
 
-      {posts.length === 0 && (
-        <p className="card muted">No posts yet. Share something above.</p>
-      )}
+      {posts.length === 0 && <div className="card bg-base-100 p-4 opacity-70">No posts yet. Share something above.</div>}
     </Body>
   );
 }

@@ -1,6 +1,3 @@
-// Messages.jsx - real conversations between the three Pulse accounts.
-// Chats are saved in the browser (localStorage), so they survive a refresh,
-// and a second tab signed in as another account sees new messages live.
 import { useEffect, useRef, useState } from "react";
 import { useOutletContext } from "react-router";
 import Body from "../components/Body";
@@ -10,20 +7,17 @@ const JUSTINE = "Justine James Bag-ao";
 const SHINELY = "Shinely Casal";
 const ELIZABETH = "Ma. Elizabeth Ann Sido";
 const accounts = [JUSTINE, SHINELY, ELIZABETH];
-
 const STORAGE_KEY = "pulse-chats";
 
-// Both people in a conversation share ONE key (names sorted), so what
-// Justine sends to Shinely is the same chat Shinely sees with Justine.
+// Both people share ONE key (names sorted), so each sees the same chat
 const chatKey = (a, b) => [a, b].sort().join("|");
 
-// Starter conversations so the page is never empty
 const seedChats = {
   [chatKey(JUSTINE, SHINELY)]: [
     { id: 1, from: SHINELY, text: "Hi! Did you finish the Layout part?", time: "9:02 AM" },
     { id: 2, from: JUSTINE, text: "Yes! Header and Footer are done.", time: "9:04 AM" },
     { id: 3, from: SHINELY, text: "Nice. How did you do the burger menu?", time: "9:05 AM" },
-    { id: 4, from: JUSTINE, text: "A true/false useState toggles an open class.", time: "9:07 AM" },
+    { id: 4, from: JUSTINE, text: "A true/false useState toggles it.", time: "9:07 AM" },
     { id: 5, from: SHINELY, text: "That's simple. Thanks!", time: "9:08 AM" },
   ],
   [chatKey(JUSTINE, ELIZABETH)]: [
@@ -42,7 +36,6 @@ const seedChats = {
   ],
 };
 
-// Read saved chats, or fall back to the starter chats
 const loadChats = () => {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -55,10 +48,10 @@ const loadChats = () => {
 const timeNow = () => new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 
 export default function Messages() {
-  const { user } = useOutletContext(); // the signed-in account
-  const others = accounts.filter((name) => name !== user); // people you can chat with
+  const { user } = useOutletContext();
+  const others = accounts.filter((name) => name !== user);
 
-  const [chats, setChats] = useState(loadChats); // { "A|B": [messages] }
+  const [chats, setChats] = useState(loadChats);
   const [activeName, setActiveName] = useState(others[0]);
   const [mobileChat, setMobileChat] = useState(false); // true = show conversation on phones
   const [text, setText] = useState("");
@@ -67,16 +60,15 @@ export default function Messages() {
   const key = chatKey(user, activeName);
   const conversation = chats[key] ?? [];
 
-  // Save every change
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(chats));
     } catch {
-      /* storage unavailable: chats just won't persist */
+      /* storage unavailable */
     }
   }, [chats]);
 
-  // If another tab (signed in as someone else) sends a message, show it here
+  // Another tab (signed in as someone else) sent a message
   useEffect(() => {
     const onStorage = (e) => {
       if (e.key === STORAGE_KEY && e.newValue) setChats(JSON.parse(e.newValue));
@@ -85,75 +77,60 @@ export default function Messages() {
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  // Scroll to the newest message
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [conversation.length, activeName]);
 
   const handleSend = (e) => {
-    e.preventDefault(); // pressing Enter submits the form
+    e.preventDefault();
     if (!text.trim()) return;
     const message = { id: Date.now(), from: user, text: text.trim(), time: timeNow() };
-    // New array: copy old messages, add the new one at the end
     setChats((prev) => ({ ...prev, [key]: [...(prev[key] ?? []), message] }));
     setText("");
   };
 
-  // Contact list entries (ContactItem shows the last message as a preview)
   const contacts = others.map((name) => {
     const msgs = chats[chatKey(user, name)] ?? [];
-    return {
-      id: name,
-      name,
-      online: true,
-      messages: msgs.length ? msgs : [{ text: "Say hi 👋" }],
-    };
+    return { id: name, name, online: true, messages: msgs.length ? msgs : [{ text: "Say hi 👋" }] };
   });
 
   return (
     <Body title="Messages" subtitle="Chat with the other Pulse accounts.">
-      <div className={`chat ${mobileChat ? "show-convo" : ""}`}>
-        <aside className="chat-list card">
+      <div className="grid gap-4 md:grid-cols-[280px_1fr]">
+        {/* Contacts (hidden on phones while a chat is open) */}
+        <ul className={`menu bg-base-100 rounded-box w-full shadow-sm ${mobileChat ? "hidden" : "block"} md:block`}>
           {contacts.map((c) => (
             <ContactItem
               key={c.id}
               chat={c}
               active={c.name === activeName}
-              onSelect={() => {
-                setActiveName(c.name);
-                setMobileChat(true);
-              }}
+              onSelect={() => { setActiveName(c.name); setMobileChat(true); }}
             />
           ))}
-        </aside>
+        </ul>
 
-        <div className="chat-convo card">
-          <div className="convo-head">
-            <button className="ghost back" onClick={() => setMobileChat(false)} aria-label="Back to contacts">←</button>
-            <Avatar name={activeName} />
+        {/* Conversation */}
+        <div className={`card bg-base-100 h-[32rem] overflow-hidden shadow-sm ${mobileChat ? "flex" : "hidden"} md:flex`}>
+          <div className="flex items-center gap-3 border-b border-base-300 p-3">
+            <button className="btn btn-ghost btn-sm md:hidden" onClick={() => setMobileChat(false)} aria-label="Back to contacts">←</button>
+            <Avatar name={activeName} online />
             <div>
-              <strong>{activeName}</strong>
-              <div className="muted">Online</div>
+              <div className="font-bold">{activeName}</div>
+              <div className="text-xs opacity-60">Online</div>
             </div>
           </div>
 
-          <div className="convo-body">
-            {conversation.length === 0 && <p className="muted">No messages yet. Say hi!</p>}
+          <div className="flex-1 overflow-y-auto bg-base-200/60 p-4">
+            {conversation.length === 0 && <p className="text-sm opacity-60">No messages yet. Say hi!</p>}
             {conversation.map((m) => (
-              // "me" = sent by the signed-in account, "them" = the other person
               <ChatMessage key={m.id} message={{ ...m, from: m.from === user ? "me" : "them" }} />
             ))}
             <div ref={endRef}></div>
           </div>
 
-          <form className="convo-input" onSubmit={handleSend}>
-            <input
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder={`Message ${activeName}`}
-              aria-label="Message"
-            />
-            <button type="submit" className="primary" disabled={!text.trim()}>Send</button>
+          <form className="flex gap-2 border-t border-base-300 p-3" onSubmit={handleSend}>
+            <input className="input w-full" value={text} onChange={(e) => setText(e.target.value)} placeholder={`Message ${activeName}`} aria-label="Message" />
+            <button type="submit" className="btn btn-primary" disabled={!text.trim()}>Send</button>
           </form>
         </div>
       </div>
