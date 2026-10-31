@@ -19,6 +19,42 @@ export const Avatar = ({ name, size = "", online = false }) => {
   );
 };
 
+// ---------- Heartbeat Feed ----------
+// Every post has a heartbeat (BPM). Likes and comments speed it up,
+// fresh posts beat faster, and old unloved posts slow down to a flatline.
+export const bpmOf = (post) => {
+  const freshness = Math.max(0, 24 - post.hoursOld);
+  const bpm = 50 + post.likes * 1.5 + post.comments * 2 + freshness;
+  return Math.min(180, Math.max(40, Math.round(bpm)));
+};
+
+const moodOf = (bpm) =>
+  bpm < 60 ? "Flatlining" : bpm < 90 ? "Steady" : bpm < 130 ? "Racing" : "On fire";
+
+// Beating heart + ECG line, animated at the real BPM speed (60 / bpm seconds per beat)
+export const Heartbeat = ({ bpm }) => {
+  const speed = { animationDuration: `${60 / bpm}s` };
+  return (
+    <div className="flex items-center gap-2 text-error" title="Heartbeat: likes, comments and freshness raise it">
+      <span className="beat" style={speed} aria-hidden="true">❤</span>
+      <svg viewBox="0 0 100 40" className="h-6 w-14" aria-hidden="true">
+        <path
+          className="ecg-line"
+          pathLength="100"
+          d="M0 20 H28 L36 20 L42 6 L50 34 L56 20 H100"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={speed}
+        />
+      </svg>
+      <span className="text-xs font-semibold">{bpm} BPM · {moodOf(bpm)}</span>
+    </div>
+  );
+};
+
 export const PostCard = ({ post, onLike, onDelete, canDelete }) => (
   <article className="card bg-base-100 shadow-sm">
     <div className="card-body gap-3">
@@ -40,15 +76,18 @@ export const PostCard = ({ post, onLike, onDelete, canDelete }) => (
       {post.photo && <img className="rounded-box max-h-96 w-full object-cover" src={post.photo} alt="Shared by the author" />}
       {post.image && <div className="h-48 rounded-box" style={{ background: post.image }} role="img" aria-label="Post photo"></div>}
 
-      <div className="flex items-center justify-between">
-        <button
-          className={`btn btn-sm rounded-full ${post.liked ? "btn-error btn-soft" : "btn-ghost"}`}
-          onClick={() => onLike(post.id)}
-          aria-pressed={post.liked}
-          aria-label={post.liked ? "Unlike post" : "Like post"}
-        >
-          {post.liked ? "♥" : "♡"} {post.likes}
-        </button>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            className={`btn btn-sm rounded-full ${post.liked ? "btn-error btn-soft" : "btn-ghost"}`}
+            onClick={() => onLike(post.id)}
+            aria-pressed={post.liked}
+            aria-label={post.liked ? "Unlike post" : "Like post"}
+          >
+            {post.liked ? "♥" : "♡"} {post.likes}
+          </button>
+          <Heartbeat bpm={bpmOf(post)} />
+        </div>
         <span className="text-xs opacity-60">{post.comments} comments</span>
       </div>
     </div>

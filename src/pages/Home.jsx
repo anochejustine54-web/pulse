@@ -1,15 +1,14 @@
+// Home.jsx - the Heartbeat Feed. Every post has a live BPM; sort by newest or fastest heartbeat.
 import { useState } from "react";
 import { useOutletContext } from "react-router";
 import Body from "../components/Body";
-import { PostCard, Avatar } from "../components/items";
+import { PostCard, Avatar, Heartbeat, bpmOf } from "../components/items";
 
+// hoursOld = how old the post is (used for its heartbeat)
 const samplePosts = [
-  { id: 1, author: "Shinely Casal", time: "2h ago", text: "Finished our React Router activity today. NavLink and Outlet finally make sense!", image: "linear-gradient(135deg,#0e7c86,#7fd1d6)", photo: "", likes: 24, liked: false, comments: 6 },
-  { id: 2, author: "Justine James Bag-ao", time: "3h ago", text: "Reminder: group meeting tomorrow after class. Bring your laptops.", image: "", photo: "", likes: 18, liked: true, comments: 4 },
-  { id: 3, author: "Ma. Elizabeth Ann Sido", time: "5h ago", text: "Sunset after the seminar was unreal. Sharing a little calm for your feed.", image: "linear-gradient(135deg,#ff5a5f,#ffc371)", photo: "", likes: 41, liked: false, comments: 9 },
-  { id: 4, author: "Carlo Mendez", time: "Yesterday", text: "Anyone up for a study session this weekend? Bringing snacks.", image: "", photo: "", likes: 12, liked: false, comments: 11 },
-  { id: 5, author: "Aira Villanueva", time: "Yesterday", text: "My first useState counter works. Small win, big smile.", image: "linear-gradient(135deg,#6d5dfc,#a7c5ff)", photo: "", likes: 33, liked: false, comments: 5 },
-  { id: 6, author: "Noel Cabrera", time: "2 days ago", text: "Tip: never push() into state. Spread a new array instead.", image: "", photo: "", likes: 29, liked: false, comments: 7 },
+  { id: 1, author: "Shinely Casal", time: "2h ago", hoursOld: 2, text: "Finished our React Router activity today. NavLink and Outlet finally make sense!", image: "linear-gradient(135deg,#0e7c86,#7fd1d6)", photo: "", likes: 24, liked: false, comments: 6 },
+  { id: 2, author: "Justine James Bag-ao", time: "3h ago", hoursOld: 3, text: "Reminder: group meeting tomorrow after class. Bring your laptops.", image: "", photo: "", likes: 18, liked: true, comments: 4 },
+  { id: 3, author: "Ma. Elizabeth Ann Sido", time: "5h ago", hoursOld: 5, text: "Sunset after the seminar was unreal. Sharing a little calm for your feed.", image: "linear-gradient(135deg,#ff5a5f,#ffc371)", photo: "", likes: 41, liked: false, comments: 9 },
 ];
 
 export default function Home() {
@@ -18,6 +17,7 @@ export default function Home() {
   const [draft, setDraft] = useState("");
   const [photo, setPhoto] = useState("");
   const [uploadError, setUploadError] = useState("");
+  const [sortBy, setSortBy] = useState("new"); // "new" or "beat"
 
   // map() returns a NEW array with the liked post updated
   const handleLike = (id) =>
@@ -52,14 +52,34 @@ export default function Home() {
   const handlePost = (e) => {
     e.preventDefault();
     if (!draft.trim() && !photo) return;
-    const newPost = { id: Date.now(), author: user, time: "Just now", text: draft.trim(), image: "", photo, likes: 0, liked: false, comments: 0 };
+    const newPost = { id: Date.now(), author: user, time: "Just now", hoursOld: 0, text: draft.trim(), image: "", photo, likes: 0, liked: false, comments: 0 };
     setPosts((prev) => [newPost, ...prev]); // new post on top
     setDraft("");
     setPhoto("");
   };
 
+  // "Fastest heartbeat" sorts a COPY of the array by BPM (highest first)
+  const shownPosts = sortBy === "beat" ? [...posts].sort((a, b) => bpmOf(b) - bpmOf(a)) : posts;
+
+  // Average heartbeat of the whole feed
+  const feedBpm = posts.length ? Math.round(posts.reduce((sum, p) => sum + bpmOf(p), 0) / posts.length) : 40;
+
   return (
-    <Body title="Your feed" subtitle="See what everyone is sharing.">
+    <Body title="Your feed" subtitle="Every post has a heartbeat. Likes and comments make it race.">
+      {/* Feed heartbeat + sort buttons */}
+      <div className="card bg-base-100 shadow-sm">
+        <div className="card-body flex-row flex-wrap items-center justify-between gap-3 py-3">
+          <div>
+            <div className="text-xs font-semibold uppercase opacity-60">Feed heartbeat</div>
+            <Heartbeat bpm={feedBpm} />
+          </div>
+          <div className="join" role="group" aria-label="Sort posts">
+            <button className={`btn btn-sm join-item ${sortBy === "new" ? "btn-primary" : ""}`} onClick={() => setSortBy("new")}>Newest</button>
+            <button className={`btn btn-sm join-item ${sortBy === "beat" ? "btn-primary" : ""}`} onClick={() => setSortBy("beat")}>Fastest heartbeat</button>
+          </div>
+        </div>
+      </div>
+
       <form className="card bg-base-100 shadow-sm" onSubmit={handlePost}>
         <div className="card-body gap-3">
           <div className="flex items-center gap-3">
@@ -89,7 +109,7 @@ export default function Home() {
         </div>
       </form>
 
-      {posts.map((post) => (
+      {shownPosts.map((post) => (
         <PostCard key={post.id} post={post} onLike={handleLike} onDelete={handleDelete} canDelete={post.author === user} />
       ))}
 
