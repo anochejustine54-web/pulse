@@ -1,4 +1,5 @@
 // items.jsx - small reusable pieces built with daisyUI classes
+import { useState } from "react";
 import { useAvatars } from "./avatars";
 
 const sizes = { "": "w-11", small: "w-8 text-xs", large: "w-28 text-4xl" };
@@ -24,7 +25,7 @@ export const Avatar = ({ name, size = "", online = false }) => {
 // fresh posts beat faster, and old unloved posts slow down to a flatline.
 export const bpmOf = (post) => {
   const freshness = Math.max(0, 24 - post.hoursOld);
-  const bpm = 50 + post.likes * 1.5 + post.comments * 2 + freshness;
+  const bpm = 50 + post.likes * 1.5 + post.commentList.length * 2 + freshness;
   return Math.min(180, Math.max(40, Math.round(bpm)));
 };
 
@@ -55,44 +56,97 @@ export const Heartbeat = ({ bpm }) => {
   );
 };
 
-export const PostCard = ({ post, onLike, onDelete, canDelete }) => (
-  <article className="card bg-base-100 shadow-sm">
-    <div className="card-body gap-3">
-      <div className="flex items-center gap-3">
-        <Avatar name={post.author} />
-        <div>
-          <div className="font-bold">{post.author}</div>
-          <div className="text-xs opacity-60">{post.time}</div>
+export const PostCard = ({ post, user, onLike, onDelete, canDelete, onComment, onDeleteComment }) => {
+  const [open, setOpen] = useState(false); // true = comments are showing
+  const [text, setText] = useState("");
+  const count = post.commentList.length;
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!text.trim()) return;
+    onComment(post.id, text.trim());
+    setText("");
+  };
+
+  return (
+    <article className="card bg-base-100 shadow-sm">
+      <div className="card-body gap-3">
+        <div className="flex items-center gap-3">
+          <Avatar name={post.author} />
+          <div>
+            <div className="font-bold">{post.author}</div>
+            <div className="text-xs opacity-60">{post.time}</div>
+          </div>
+          {/* Delete shows ONLY for the post's owner */}
+          {canDelete && (
+            <button className="btn btn-ghost btn-sm text-error ml-auto" onClick={() => onDelete(post.id)} aria-label="Delete post">
+              🗑 Delete
+            </button>
+          )}
         </div>
-        {/* Delete shows ONLY for the post's owner */}
-        {canDelete && (
-          <button className="btn btn-ghost btn-sm text-error ml-auto" onClick={() => onDelete(post.id)} aria-label="Delete post">
-            🗑 Delete
+
+        {post.text && <p>{post.text}</p>}
+        {post.photo && <img className="rounded-box max-h-96 w-full object-cover" src={post.photo} alt="Shared by the author" />}
+        {post.image && <div className="h-48 rounded-box" style={{ background: post.image }} role="img" aria-label="Post photo"></div>}
+
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              className={`btn btn-sm rounded-full ${post.liked ? "btn-error btn-soft" : "btn-ghost"}`}
+              onClick={() => onLike(post.id)}
+              aria-pressed={post.liked}
+              aria-label={post.liked ? "Unlike post" : "Like post"}
+            >
+              {post.liked ? "♥" : "♡"} {post.likes}
+            </button>
+            <Heartbeat bpm={bpmOf(post)} />
+          </div>
+          <button className="btn btn-ghost btn-sm" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+            💬 {count} {count === 1 ? "comment" : "comments"}
           </button>
+        </div>
+
+        {/* Comments */}
+        {open && (
+          <div className="flex flex-col gap-3 border-t border-base-300 pt-3">
+            {count === 0 && <p className="text-sm opacity-60">No comments yet. Be the first!</p>}
+
+            {post.commentList.map((c) => (
+              <div key={c.id} className="flex items-start gap-2">
+                <Avatar name={c.author} size="small" />
+                <div className="flex-1 rounded-box bg-base-200 px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold">{c.author}</span>
+                    <span className="text-xs opacity-60">{c.time}</span>
+                    {/* You can delete only your own comments */}
+                    {c.author === user && (
+                      <button className="btn btn-ghost btn-xs text-error ml-auto" onClick={() => onDeleteComment(post.id, c.id)} aria-label="Delete comment">
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-sm">{c.text}</p>
+                </div>
+              </div>
+            ))}
+
+            <form className="flex items-center gap-2" onSubmit={handleSubmit}>
+              <Avatar name={user} size="small" />
+              <input
+                className="input input-sm w-full"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder="Write a comment..."
+                aria-label="Write a comment"
+              />
+              <button type="submit" className="btn btn-primary btn-sm" disabled={!text.trim()}>Send</button>
+            </form>
+          </div>
         )}
       </div>
-
-      {post.text && <p>{post.text}</p>}
-      {post.photo && <img className="rounded-box max-h-96 w-full object-cover" src={post.photo} alt="Shared by the author" />}
-      {post.image && <div className="h-48 rounded-box" style={{ background: post.image }} role="img" aria-label="Post photo"></div>}
-
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            className={`btn btn-sm rounded-full ${post.liked ? "btn-error btn-soft" : "btn-ghost"}`}
-            onClick={() => onLike(post.id)}
-            aria-pressed={post.liked}
-            aria-label={post.liked ? "Unlike post" : "Like post"}
-          >
-            {post.liked ? "♥" : "♡"} {post.likes}
-          </button>
-          <Heartbeat bpm={bpmOf(post)} />
-        </div>
-        <span className="text-xs opacity-60">{post.comments} comments</span>
-      </div>
-    </div>
-  </article>
-);
+    </article>
+  );
+};
 
 // One row of the contacts list (rendered inside a daisyUI "menu")
 export const ContactItem = ({ chat, active, onSelect }) => {

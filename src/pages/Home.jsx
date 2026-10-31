@@ -1,14 +1,40 @@
-// Home.jsx - the Heartbeat Feed. Every post has a live BPM; sort by newest or fastest heartbeat.
+// Home.jsx - the Heartbeat Feed with photos and comments.
 import { useState } from "react";
 import { useOutletContext } from "react-router";
 import Body from "../components/Body";
 import { PostCard, Avatar, Heartbeat, bpmOf } from "../components/items";
 
+// Pictures live in the public folder. BASE_URL adds "/pulse/" on GitHub Pages.
+const pic = (name) => `${import.meta.env.BASE_URL}${name}`;
+
 // hoursOld = how old the post is (used for its heartbeat)
+// commentList = the comments on the post
 const samplePosts = [
-  { id: 1, author: "Shinely Casal", time: "2h ago", hoursOld: 2, text: "Finished our React Router activity today. NavLink and Outlet finally make sense!", image: "linear-gradient(135deg,#0e7c86,#7fd1d6)", photo: "", likes: 24, liked: false, comments: 6 },
-  { id: 2, author: "Justine James Bag-ao", time: "3h ago", hoursOld: 3, text: "Reminder: group meeting tomorrow after class. Bring your laptops.", image: "", photo: "", likes: 18, liked: true, comments: 4 },
-  { id: 3, author: "Ma. Elizabeth Ann Sido", time: "5h ago", hoursOld: 5, text: "Sunset after the seminar was unreal. Sharing a little calm for your feed.", image: "linear-gradient(135deg,#ff5a5f,#ffc371)", photo: "", likes: 41, liked: false, comments: 9 },
+  {
+    id: 1, author: "Shinely Casal", time: "1h ago", hoursOld: 1,
+    text: "Jollibee after class! Chickenjoy, spaghetti, fries and a sundae. Treating myself today. 🍗🍟",
+    image: "", photo: pic("jollibee.jpg"), likes: 26, liked: false,
+    commentList: [
+      { id: 101, author: "Ma. Elizabeth Ann Sido", text: "Sarap! Next time sama ako. 😋", time: "50m ago" },
+      { id: 102, author: "Justine James Bag-ao", text: "That sundae looks so good.", time: "30m ago" },
+    ],
+  },
+  {
+    id: 2, author: "Justine James Bag-ao", time: "3h ago", hoursOld: 3,
+    text: "Reminder: group meeting tomorrow after class. Bring your laptops.",
+    image: "", photo: "", likes: 18, liked: true,
+    commentList: [
+      { id: 201, author: "Shinely Casal", text: "Noted! What time again?", time: "2h ago" },
+    ],
+  },
+  {
+    id: 3, author: "Ma. Elizabeth Ann Sido", time: "5h ago", hoursOld: 5,
+    text: "Sunset after the seminar was unreal. Sharing a little calm for your feed. 🌅",
+    image: "", photo: pic("sunset.jpg"), likes: 41, liked: false,
+    commentList: [
+      { id: 301, author: "Shinely Casal", text: "Wow, the colors! 😍", time: "4h ago" },
+    ],
+  },
 ];
 
 export default function Home() {
@@ -24,6 +50,24 @@ export default function Home() {
     setPosts((prev) =>
       prev.map((p) =>
         p.id === id ? { ...p, liked: !p.liked, likes: p.liked ? p.likes - 1 : p.likes + 1 } : p
+      )
+    );
+
+  // Add a comment: copy the post, then copy its commentList with the new comment added
+  const handleComment = (postId, text) =>
+    setPosts((prev) =>
+      prev.map((p) =>
+        p.id === postId
+          ? { ...p, commentList: [...p.commentList, { id: Date.now(), author: user, text, time: "Just now" }] }
+          : p
+      )
+    );
+
+  // Delete a comment (the button only shows on your own comments)
+  const handleDeleteComment = (postId, commentId) =>
+    setPosts((prev) =>
+      prev.map((p) =>
+        p.id === postId ? { ...p, commentList: p.commentList.filter((c) => c.id !== commentId) } : p
       )
     );
 
@@ -52,7 +96,7 @@ export default function Home() {
   const handlePost = (e) => {
     e.preventDefault();
     if (!draft.trim() && !photo) return;
-    const newPost = { id: Date.now(), author: user, time: "Just now", hoursOld: 0, text: draft.trim(), image: "", photo, likes: 0, liked: false, comments: 0 };
+    const newPost = { id: Date.now(), author: user, time: "Just now", hoursOld: 0, text: draft.trim(), image: "", photo, likes: 0, liked: false, commentList: [] };
     setPosts((prev) => [newPost, ...prev]); // new post on top
     setDraft("");
     setPhoto("");
@@ -110,7 +154,16 @@ export default function Home() {
       </form>
 
       {shownPosts.map((post) => (
-        <PostCard key={post.id} post={post} onLike={handleLike} onDelete={handleDelete} canDelete={post.author === user} />
+        <PostCard
+          key={post.id}
+          post={post}
+          user={user}
+          onLike={handleLike}
+          onDelete={handleDelete}
+          canDelete={post.author === user}
+          onComment={handleComment}
+          onDeleteComment={handleDeleteComment}
+        />
       ))}
 
       {posts.length === 0 && <div className="card bg-base-100 p-4 opacity-70">No posts yet. Share something above.</div>}
