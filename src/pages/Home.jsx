@@ -1,8 +1,9 @@
-// Home.jsx - the Heartbeat Feed with photos and comments.
+// Home.jsx - the Heartbeat Feed with photos, comments and pet reactions.
 import { useState } from "react";
 import { useOutletContext } from "react-router";
 import Body from "../components/Body";
 import { PostCard, Avatar, Heartbeat, bpmOf } from "../components/items";
+import { notifyPet } from "../components/pets";
 
 // Pictures live in the public folder. BASE_URL adds "/pulse/" on GitHub Pages.
 const pic = (name) => `${import.meta.env.BASE_URL}${name}`;
@@ -45,16 +46,20 @@ export default function Home() {
   const [uploadError, setUploadError] = useState("");
   const [sortBy, setSortBy] = useState("new"); // "new" or "beat"
 
-  // map() returns a NEW array with the liked post updated
-  const handleLike = (id) =>
+  // map() returns a NEW array with the liked post updated. The pet reacts to a new like.
+  const handleLike = (id) => {
+    const target = posts.find((p) => p.id === id);
+    if (target && !target.liked) notifyPet("like");
     setPosts((prev) =>
       prev.map((p) =>
         p.id === id ? { ...p, liked: !p.liked, likes: p.liked ? p.likes - 1 : p.likes + 1 } : p
       )
     );
+  };
 
   // Add a comment: copy the post, then copy its commentList with the new comment added
-  const handleComment = (postId, text) =>
+  const handleComment = (postId, text) => {
+    notifyPet("comment");
     setPosts((prev) =>
       prev.map((p) =>
         p.id === postId
@@ -62,6 +67,7 @@ export default function Home() {
           : p
       )
     );
+  };
 
   // Delete a comment (the button only shows on your own comments)
   const handleDeleteComment = (postId, commentId) =>
@@ -98,6 +104,7 @@ export default function Home() {
     if (!draft.trim() && !photo) return;
     const newPost = { id: Date.now(), author: user, time: "Just now", hoursOld: 0, text: draft.trim(), image: "", photo, likes: 0, liked: false, commentList: [] };
     setPosts((prev) => [newPost, ...prev]); // new post on top
+    notifyPet("post");
     setDraft("");
     setPhoto("");
   };
