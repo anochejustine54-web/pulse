@@ -167,7 +167,7 @@ export default function PetAssistant({ user, onChangePet }) {
 
   useEffect(() => {
     const onStorage = (e) => {
-      if (e.key !== "pulse-chats" || !e.newValue) return;
+     if (e.key !== "pulse-chats-v2" || !e.newValue) return;
       try {
         const next = JSON.parse(e.newValue);
         const prev = e.oldValue ? JSON.parse(e.oldValue) : {};
