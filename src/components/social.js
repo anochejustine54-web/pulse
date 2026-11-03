@@ -1,51 +1,93 @@
-// social.js - who follows whom. Saved in the browser (localStorage) and synced between tabs.
+
 import { useEffect, useState } from "react";
 
-export const ACCOUNTS = ["Justine James Bag-ao", "Shinely Casal", "Ma. Elizabeth Ann Sido"];
+export const ACCOUNTS = [
+  "Justine James Bag-ao",
+  "Shinely Casal",
+  "Ma. Elizabeth Ann Sido",
+];
 
-const KEY = "pulse-follows"; // { "Shinely Casal": ["Justine James Bag-ao"], ... } = who each account follows
+const KEY = "pulse-follows";
 
-const read = () => {
+export function getAccountName(user) {
+  if (typeof user === "string") return user;
+  return user?.displayName || user?.email || "";
+}
+
+function read() {
   try {
-    return JSON.parse(localStorage.getItem(KEY)) ?? {};
+    return JSON.parse(localStorage.getItem(KEY)) || {};
   } catch {
     return {};
   }
-};
+}
 
 export function useFollows(user) {
+  const currentUser = getAccountName(user);
   const [follows, setFollows] = useState(read);
 
-  // Another tab (another account) followed or unfollowed someone
   useEffect(() => {
-    const onStorage = (e) => {
-      if (e.key === KEY) setFollows(read());
+    const refresh = (event) => {
+      if (!event || event.key === KEY) {
+        setFollows(read());
+      }
     };
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
+
+    window.addEventListener("storage", refresh);
+    window.addEventListener("pulse-follows-updated", refresh);
+
+    return () => {
+      window.removeEventListener("storage", refresh);
+      window.removeEventListener("pulse-follows-updated", refresh);
+    };
   }, []);
 
-  const following = follows[user] ?? [];                                   // people I follow
-  const followers = ACCOUNTS.filter((n) => n !== user && (follows[n] ?? []).includes(user)); // people who follow me
+  const following = follows[currentUser] || [];
+
+  const followers = ACCOUNTS.filter(
+    (name) =>
+      name !== currentUser &&
+      (follows[name] || []).includes(currentUser)
+  );
 
   const isFollowing = (name) => following.includes(name);
   const followsMe = (name) => followers.includes(name);
 
-  // People who follow each other can message each other
-  const friends = ACCOUNTS.filter((n) => n !== user && isFollowing(n) && followsMe(n));
+  const friends = ACCOUNTS.filter(
+    (name) =>
+      name !== currentUser &&
+      following.includes(name) &&
+      (follows[name] || []).includes(currentUser)
+  );
 
-  // Follow or unfollow. Always start from the latest saved data so other tabs are not overwritten.
-  const toggleFollow = (name) => {
+  function toggleFollow(name) {
+    if (!currentUser || !ACCOUNTS.includes(name)) return;
+
     const latest = read();
-    const mine = latest[user] ?? [];
-    const next = { ...latest, [user]: mine.includes(name) ? mine.filter((n) => n !== name) : [...mine, name] };
-    setFollows(next);
+    const mine = latest[currentUser] || [];
+
+    const next = {
+      ...latest,
+      [currentUser]: mine.includes(name)
+        ? mine.filter((person) => person !== name)
+        : [...mine, name],
+    };
+
     try {
       localStorage.setItem(KEY, JSON.stringify(next));
-    } catch {
-      /* storage unavailable */
+      setFollows(next);
+      window.dispatchEvent(new Event("pulse-follows-updated"));
+    } catch (error) {
+      console.error("Could not save follows:", error);
     }
-  };
+  }
 
-  return { following, followers, friends, isFollowing, followsMe, toggleFollow };
+  return {
+    following,
+    followers,
+    friends,
+    isFollowing,
+    followsMe,
+    toggleFollow,
+  };
 }
