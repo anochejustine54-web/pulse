@@ -13,6 +13,25 @@ import {
 import { auth, googleProvider } from "../firebase";
 import { Toast } from "./items";
 
+// FRONTEND DEMO ACCOUNTS
+const DEMO_ACCOUNTS = [
+  {
+    name: "Justine James Bag-ao",
+    email: "justine@pulse.demo",
+    password: "justine123"
+  },
+  {
+    name: "Shinely Casal",
+    email: "shinely@pulse.demo",
+    password: "shinely123"
+  },
+  {
+    name: "Ma. Elizabeth Ann Sido",
+    email: "elizabeth@pulse.demo",
+    password: "elizabeth123"
+  }
+];
+
 export default function Form({ onSuccess }) {
   const navigate = useNavigate();
 
@@ -60,17 +79,43 @@ export default function Form({ onSuccess }) {
     setTimeout(() => navigate("/"), 800);
   };
 
-  // NORMAL EMAIL/PASSWORD LOGIN
+  // NORMAL LOGIN + DEMO ACCOUNT LOGIN
   const handleLogin = async (e) => {
     e.preventDefault();
 
     if (!data.email.trim() || !data.password) {
-      return showAlert("warning", "Please enter your email and password.");
+      return showAlert(
+        "warning",
+        "Please enter your email and password."
+      );
     }
 
     setLoading(true);
     closeAlert();
 
+    // CHECK FRONTEND DEMO ACCOUNTS FIRST
+    const demoAccount = DEMO_ACCOUNTS.find(
+      (account) =>
+        account.email === data.email.trim().toLowerCase() &&
+        account.password === data.password
+    );
+
+    if (demoAccount) {
+      showAlert(
+        "success",
+        `Welcome back, ${demoAccount.name}!`
+      );
+
+      finishLogin({
+        displayName: demoAccount.name,
+        email: demoAccount.email
+      });
+
+      setLoading(false);
+      return;
+    }
+
+    // OTHERWISE USE FIREBASE LOGIN
     try {
       const result = await signInWithEmailAndPassword(
         auth,
@@ -88,7 +133,8 @@ export default function Form({ onSuccess }) {
         "auth/invalid-credential": "Incorrect email or password.",
         "auth/user-not-found": "No account found with this email.",
         "auth/wrong-password": "Incorrect password.",
-        "auth/too-many-requests": "Too many attempts. Please try again later."
+        "auth/too-many-requests":
+          "Too many attempts. Please try again later."
       };
 
       showAlert(
@@ -124,6 +170,7 @@ export default function Form({ onSuccess }) {
       }
 
       setGoogleUser(user);
+
       setData({
         email: user.email || "",
         password: ""
@@ -135,7 +182,10 @@ export default function Form({ onSuccess }) {
       console.error("Google registration error:", error);
 
       if (error.code === "auth/popup-closed-by-user") {
-        showAlert("warning", "Google registration was cancelled.");
+        showAlert(
+          "warning",
+          "Google registration was cancelled."
+        );
       } else {
         showAlert(
           "error",
@@ -152,7 +202,10 @@ export default function Form({ onSuccess }) {
     e.preventDefault();
 
     if (!googleUser) {
-      return showAlert("error", "Please register with Google again.");
+      return showAlert(
+        "error",
+        "Please register with Google again."
+      );
     }
 
     if (newPassword.length < 6) {
@@ -163,7 +216,10 @@ export default function Form({ onSuccess }) {
     }
 
     if (newPassword !== confirmPassword) {
-      return showAlert("warning", "Passwords do not match.");
+      return showAlert(
+        "warning",
+        "Passwords do not match."
+      );
     }
 
     setLoading(true);
@@ -195,7 +251,8 @@ export default function Form({ onSuccess }) {
       console.error("Password creation error:", error);
 
       const messages = {
-        "auth/weak-password": "Please choose a stronger password.",
+        "auth/weak-password":
+          "Please choose a stronger password.",
         "auth/email-already-in-use":
           "This email already has a separate password account. Please sign in using that account.",
         "auth/provider-already-linked":
@@ -234,6 +291,7 @@ export default function Form({ onSuccess }) {
         "success",
         "Password reset instructions have been sent to your email."
       );
+
     } catch (error) {
       console.error(error);
       showAlert("error", error.message);
@@ -291,7 +349,9 @@ export default function Form({ onSuccess }) {
             <button
               type="button"
               className="btn join-item"
-              onClick={() => setShowNewPassword((prev) => !prev)}
+              onClick={() =>
+                setShowNewPassword((prev) => !prev)
+              }
             >
               {showNewPassword ? "Hide" : "Show"}
             </button>
@@ -391,7 +451,9 @@ export default function Form({ onSuccess }) {
           <button
             type="button"
             className="btn join-item"
-            onClick={() => setShowPassword((prev) => !prev)}
+            onClick={() =>
+              setShowPassword((prev) => !prev)
+            }
           >
             {showPassword ? "Hide" : "Show"}
           </button>
@@ -448,6 +510,7 @@ export default function Form({ onSuccess }) {
                   d="M43.6 20.5H42V20H24v8h11.3a12 12 0 0 1-4.2 5.5l6.2 5.2C41.4 35.1 44 29.9 44 24c0-1.2-.1-2.4-.4-3.5Z"
                 />
               </svg>
+
               Sign up with Google
             </>
           )}
@@ -456,6 +519,12 @@ export default function Form({ onSuccess }) {
         <p className="text-center text-sm opacity-60 mt-2">
           New to Pulse? Sign up using your Google account.
         </p>
+
+        <div className="divider my-2">DEMO ACCOUNTS</div>
+
+        <div className="text-xs opacity-70 text-center">
+          Use one of the sample accounts to test Pulse.
+        </div>
       </form>
     </>
   );
