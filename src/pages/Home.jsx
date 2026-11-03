@@ -1,4 +1,4 @@
-
+// Home.jsx - the Heartbeat Feed with photos, comments and pet reactions.
 import { useState } from "react";
 import { useOutletContext } from "react-router";
 import Body from "../components/Body";
@@ -8,196 +8,133 @@ import { notifyPet } from "../components/pets";
 // Pictures live in the public folder. BASE_URL adds "/pulse/" on GitHub Pages.
 const pic = (name) => `${import.meta.env.BASE_URL}${name}`;
 
+// hoursOld = how old the post is (used for its heartbeat)
+// commentList = the comments on the post
+const samplePosts = [
+  {
+    id: 1, author: "Shinely Casal", time: "1h ago", hoursOld: 1,
+    text: "Jollibee after class! Chickenjoy, spaghetti, fries and a sundae. Treating myself today. 🍗🍟",
+    image: "", photo: pic("jollibee.jpg"), likes: 26, liked: false,
+    commentList: [
+      { id: 101, author: "Ma. Elizabeth Ann Sido", text: "Sarap! Next time sama ako. 😋", time: "50m ago" },
+      { id: 102, author: "Justine James Bag-ao", text: "That sundae looks so good.", time: "30m ago" },
+    ],
+  },
+  {
+    id: 2, author: "Justine James Bag-ao", time: "3h ago", hoursOld: 3,
+    text: "Reminder: group meeting tomorrow after class. Bring your laptops.",
+    image: "", photo: "", likes: 18, liked: true,
+    commentList: [
+      { id: 201, author: "Shinely Casal", text: "Noted! What time again?", time: "2h ago" },
+    ],
+  },
+  {
+    id: 3, author: "Ma. Elizabeth Ann Sido", time: "5h ago", hoursOld: 5,
+    text: "Sunset after the seminar was unreal. Sharing a little calm for your feed. 🌅",
+    image: "", photo: pic("sunset.jpg"), likes: 41, liked: false,
+    commentList: [
+      { id: 301, author: "Shinely Casal", text: "Wow, the colors! 😍", time: "4h ago" },
+    ],
+  },
+];
+
 export default function Home() {
   const { user } = useOutletContext();
-
-  // Start with an empty feed instead of displaying sample posts.
-  const [posts, setPosts] = useState([]);
-
+  const [posts, setPosts] = useState(samplePosts);
   const [draft, setDraft] = useState("");
   const [photo, setPhoto] = useState("");
   const [uploadError, setUploadError] = useState("");
-  const [sortBy, setSortBy] = useState("new");
+  const [sortBy, setSortBy] = useState("new"); // "new" or "beat"
 
-  // Like a post and notify the pet.
+  // map() returns a NEW array with the liked post updated. The pet reacts to a new like.
   const handleLike = (id) => {
     const target = posts.find((p) => p.id === id);
-
-    if (target && !target.liked) {
-      notifyPet("like");
-    }
-
+    if (target && !target.liked) notifyPet("like");
     setPosts((prev) =>
       prev.map((p) =>
-        p.id === id
-          ? {
-              ...p,
-              liked: !p.liked,
-              likes: p.liked ? p.likes - 1 : p.likes + 1,
-            }
-          : p
+        p.id === id ? { ...p, liked: !p.liked, likes: p.liked ? p.likes - 1 : p.likes + 1 } : p
       )
     );
   };
 
-  // Add a comment.
+  // Add a comment: copy the post, then copy its commentList with the new comment added
   const handleComment = (postId, text) => {
     notifyPet("comment");
-
     setPosts((prev) =>
       prev.map((p) =>
         p.id === postId
-          ? {
-              ...p,
-              commentList: [
-                ...p.commentList,
-                {
-                  id: Date.now(),
-                  author: user,
-                  text,
-                  time: "Just now",
-                },
-              ],
-            }
+          ? { ...p, commentList: [...p.commentList, { id: Date.now(), author: user, text, time: "Just now" }] }
           : p
       )
     );
   };
 
-  // Delete a comment.
+  // Delete a comment (the button only shows on your own comments)
   const handleDeleteComment = (postId, commentId) =>
     setPosts((prev) =>
       prev.map((p) =>
-        p.id === postId
-          ? {
-              ...p,
-              commentList: p.commentList.filter(
-                (c) => c.id !== commentId
-              ),
-            }
-          : p
+        p.id === postId ? { ...p, commentList: p.commentList.filter((c) => c.id !== commentId) } : p
       )
     );
 
-  // Handle photo selection.
   const handleFile = (e) => {
     const file = e.target.files[0];
-
     if (!file) return;
-
     if (!file.type.startsWith("image/")) {
-      setUploadError(
-        "Please choose an image file (JPG, PNG, GIF or WebP)."
-      );
+      setUploadError("Please choose an image file (JPG, PNG, GIF or WebP).");
     } else if (file.size > 5 * 1024 * 1024) {
-      setUploadError(
-        "That picture is over 5 MB. Please choose a smaller one."
-      );
+      setUploadError("That picture is over 5 MB. Please choose a smaller one.");
     } else {
       setUploadError("");
       setPhoto(URL.createObjectURL(file));
     }
-
     e.target.value = "";
   };
 
-  // Only the owner can delete a post.
+  // Only the owner can delete. filter() returns a NEW array without the post.
   const handleDelete = (id) => {
     const target = posts.find((p) => p.id === id);
-
     if (!target || target.author !== user) return;
-
     if (!window.confirm("Delete this post?")) return;
-
     setPosts((prev) => prev.filter((p) => p.id !== id));
   };
 
-  // Create a new post.
   const handlePost = (e) => {
     e.preventDefault();
-
     if (!draft.trim() && !photo) return;
-
-    const newPost = {
-      id: Date.now(),
-      author: user,
-      time: "Just now",
-      hoursOld: 0,
-      text: draft.trim(),
-      image: "",
-      photo,
-      likes: 0,
-      liked: false,
-      commentList: [],
-    };
-
-    setPosts((prev) => [newPost, ...prev]);
-
+    const newPost = { id: Date.now(), author: user, time: "Just now", hoursOld: 0, text: draft.trim(), image: "", photo, likes: 0, liked: false, commentList: [] };
+    setPosts((prev) => [newPost, ...prev]); // new post on top
     notifyPet("post");
-
     setDraft("");
     setPhoto("");
   };
 
-  // Sort posts.
-  const shownPosts =
-    sortBy === "beat"
-      ? [...posts].sort((a, b) => bpmOf(b) - bpmOf(a))
-      : posts;
+  // "Fastest heartbeat" sorts a COPY of the array by BPM (highest first)
+  const shownPosts = sortBy === "beat" ? [...posts].sort((a, b) => bpmOf(b) - bpmOf(a)) : posts;
 
-  // Calculate average feed heartbeat.
-  const feedBpm = posts.length
-    ? Math.round(
-        posts.reduce((sum, p) => sum + bpmOf(p), 0) / posts.length
-      )
-    : 40;
+  // Average heartbeat of the whole feed
+  const feedBpm = posts.length ? Math.round(posts.reduce((sum, p) => sum + bpmOf(p), 0) / posts.length) : 40;
 
   return (
-    <Body
-      title="Your feed"
-      subtitle="Every post has a heartbeat. Likes and comments make it race."
-    >
-      {/* Feed heartbeat and sorting buttons */}
+    <Body title="Your feed" subtitle="Every post has a heartbeat. Likes and comments make it race.">
+      {/* Feed heartbeat + sort buttons */}
       <div className="card bg-base-100 shadow-sm">
         <div className="card-body flex-row flex-wrap items-center justify-between gap-3 py-3">
           <div>
-            <div className="text-xs font-semibold uppercase opacity-60">
-              Feed heartbeat
-            </div>
+            <div className="text-xs font-semibold uppercase opacity-60">Feed heartbeat</div>
             <Heartbeat bpm={feedBpm} />
           </div>
-
           <div className="join" role="group" aria-label="Sort posts">
-            <button
-              className={`btn btn-sm join-item ${
-                sortBy === "new" ? "btn-primary" : ""
-              }`}
-              onClick={() => setSortBy("new")}
-            >
-              Newest
-            </button>
-
-            <button
-              className={`btn btn-sm join-item ${
-                sortBy === "beat" ? "btn-primary" : ""
-              }`}
-              onClick={() => setSortBy("beat")}
-            >
-              Fastest heartbeat
-            </button>
+            <button className={`btn btn-sm join-item ${sortBy === "new" ? "btn-primary" : ""}`} onClick={() => setSortBy("new")}>Newest</button>
+            <button className={`btn btn-sm join-item ${sortBy === "beat" ? "btn-primary" : ""}`} onClick={() => setSortBy("beat")}>Fastest heartbeat</button>
           </div>
         </div>
       </div>
 
-      {/* Create post form */}
-      <form
-        className="card bg-base-100 shadow-sm"
-        onSubmit={handlePost}
-      >
+      <form className="card bg-base-100 shadow-sm" onSubmit={handlePost}>
         <div className="card-body gap-3">
           <div className="flex items-center gap-3">
             <Avatar name={user} />
-
             <input
               className="input w-full"
               value={draft}
@@ -209,59 +146,20 @@ export default function Home() {
 
           {photo && (
             <div className="relative">
-              <img
-                className="rounded-box max-h-64 w-full object-cover"
-                src={photo}
-                alt="Selected"
-              />
-
-              <button
-                type="button"
-                className="btn btn-sm absolute top-2 right-2"
-                onClick={() => setPhoto("")}
-              >
-                Remove
-              </button>
+              <img className="rounded-box max-h-64 w-full object-cover" src={photo} alt="Selected" />
+              <button type="button" className="btn btn-sm absolute top-2 right-2" onClick={() => setPhoto("")}>Remove</button>
             </div>
           )}
-
-          {uploadError && (
-            <div
-              role="alert"
-              className="alert alert-error alert-soft py-2 text-sm"
-            >
-              {uploadError}
-            </div>
-          )}
+          {uploadError && <div role="alert" className="alert alert-error alert-soft py-2 text-sm">{uploadError}</div>}
 
           <div className="flex items-center justify-between">
-            <label
-              htmlFor="photo"
-              className="btn btn-ghost btn-sm"
-            >
-              📷 Add photo
-            </label>
-
-            <input
-              id="photo"
-              type="file"
-              accept="image/*"
-              hidden
-              onChange={handleFile}
-            />
-
-            <button
-              type="submit"
-              className="btn btn-primary btn-sm"
-              disabled={!draft.trim() && !photo}
-            >
-              Post
-            </button>
+            <label htmlFor="photo" className="btn btn-ghost btn-sm">📷 Add photo</label>
+            <input id="photo" type="file" accept="image/*" hidden onChange={handleFile} />
+            <button type="submit" className="btn btn-primary btn-sm" disabled={!draft.trim() && !photo}>Post</button>
           </div>
         </div>
       </form>
 
-      {/* Display posts */}
       {shownPosts.map((post) => (
         <PostCard
           key={post.id}
@@ -275,12 +173,7 @@ export default function Home() {
         />
       ))}
 
-      {/* Empty feed message */}
-      {posts.length === 0 && (
-        <div className="card bg-base-100 p-4 opacity-70">
-          No posts yet. Share something above.
-        </div>
-      )}
+      {posts.length === 0 && <div className="card bg-base-100 p-4 opacity-70">No posts yet. Share something above.</div>}
     </Body>
   );
 }
