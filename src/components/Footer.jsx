@@ -7,7 +7,7 @@ export default function Footer() {
       <aside>
         <p>© 2026 Pulse. Share what moves you.</p>
         <p className="text-sm opacity-70">
-          <Link to="/about" className="link link-hover">About</Link> ·{" "}
+          <Link to="/people" className="link link-hover">People</Link> ·{" "}
           <Link to="/messages" className="link link-hover">Messages</Link>
         </p>
       </aside>

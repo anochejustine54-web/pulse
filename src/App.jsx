@@ -10,7 +10,6 @@ import Home from "./pages/Home";
 import People from "./pages/People";
 import Messages from "./pages/Messages";
 import Profile from "./pages/Profile";
-import About from "./pages/About";
 import NotFound from "./pages/NotFound";
 import "./App.css";
 
@@ -37,7 +36,6 @@ export default function App() {
           <Route path="people" element={<People />} />
           <Route path="messages" element={<Messages />} />
           <Route path="profile" element={<Profile />} />
-          <Route path="about" element={<About />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
